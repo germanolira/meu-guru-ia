@@ -8,10 +8,10 @@ export async function getChats(): Promise<Chat[]> {
   if (!json) return [];
   
   const chats = JSON.parse(json);
-  // Converter timestamps de volta para Date objects
-  return chats.map((chat: Chat) => ({
+  return chats.map((chat: any) => ({
     ...chat,
-    messages: chat.messages.map(msg => ({
+    category: chat.category || 'Outros',
+    messages: chat.messages.map((msg: any) => ({
       ...msg,
       timestamp: new Date(msg.timestamp)
     }))
@@ -24,21 +24,25 @@ export async function saveChats(chats: Chat[]): Promise<void> {
 
 export async function addOrUpdateChat(chat: Chat): Promise<void> {
   const chats = await getChats();
+  
   const idx = chats.findIndex(c => c.id === chat.id);
   if (idx > -1) {
     chats[idx] = chat;
   } else {
     chats.push(chat);
   }
+  
   await saveChats(chats);
 }
 
 export async function getChatById(id: string): Promise<Chat | undefined> {
   const chats = await getChats();
-  const chat = chats.find(c => c.id === id);
-  if (!chat) return undefined;
   
-  // Garantir que timestamps são Date objects
+  const chat = chats.find(c => c.id === id);
+  if (!chat) {
+    return undefined;
+  }
+  
   return {
     ...chat,
     messages: chat.messages.map(msg => ({
@@ -57,4 +61,15 @@ export async function deleteChat(id: string): Promise<void> {
 export function generateChatTitle(firstMessage: string): string {
   const words = firstMessage.trim().split(' ');
   return words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '');
+}
+
+export async function testAsyncStorage(): Promise<void> {
+  try {
+    await AsyncStorage.setItem('test_key', JSON.stringify({ test: 'value', timestamp: Date.now() }));
+    
+    const testResult = await AsyncStorage.getItem('test_key');
+    
+    await AsyncStorage.removeItem('test_key');
+  } catch (error) {
+  }
 } 

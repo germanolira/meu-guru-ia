@@ -14,7 +14,6 @@ export function useSendMessage() {
 
   return useMutation({
     mutationFn: async ({ messages, model, streaming, onStreamChunk }: SendMessageParams) => {
-      // Convert app messages to OpenRouter format
       const chatMessages: ChatMessage[] = messages
         .filter(msg => msg.role !== 'system' || msg.text !== 'Bem-vindo! Experimente enviar uma mensagem para ver as animações.')
         .map(msg => ({
@@ -29,18 +28,14 @@ export function useSendMessage() {
       }
     },
     onSuccess: () => {
-      // Invalidate any cached chat data if needed
       queryClient.invalidateQueries({ queryKey: ['chat'] });
     },
     onError: (error) => {
-      console.error('Chat API Error:', error);
     },
   });
 }
 
 export function useChatHistory() {
-  // This could be extended to fetch chat history from a backend
-  // For now, we'll manage state locally in the component
   return {
     data: [],
     isLoading: false,
