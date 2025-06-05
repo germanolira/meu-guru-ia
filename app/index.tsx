@@ -7,7 +7,8 @@ import { LegendListRef } from "@legendapp/list";
 import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Keyboard, Platform, SafeAreaView } from "react-native";
+import { Alert, Keyboard, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Message } from "../types/chat";
 
 function ChatScreen() {
@@ -115,7 +116,10 @@ function ChatScreen() {
 
       const botReply: Message = {
         id: `bot-${Date.now()}`,
-        text: accumulatedText || response || "Desculpe, não consegui gerar uma resposta.",
+        text:
+          accumulatedText ||
+          response ||
+          "Desculpe, não consegui gerar uma resposta.",
         isUser: false,
         timestamp: new Date(),
         role: "assistant",
@@ -128,11 +132,11 @@ function ChatScreen() {
         );
         const finalMessages = [...newMessages, botReply];
         setCanShowNewQuestion(true);
-        
+
         if (currentChatId) {
           saveChatMessages(finalMessages);
         }
-        
+
         return finalMessages;
       });
     } catch (error) {
@@ -186,10 +190,14 @@ function ChatScreen() {
   useEffect(() => {
     // Atualizar estados baseados nas mensagens carregadas
     if (currentMessages.length > 0) {
-      const hasUserMessage = currentMessages.some(msg => msg.isUser);
+      const hasUserMessage = currentMessages.some((msg) => msg.isUser);
       const lastMessage = currentMessages[currentMessages.length - 1];
-      const isBotLastMessage = lastMessage && !lastMessage.isUser && !lastMessage.isThinking && !lastMessage.isStreaming;
-      
+      const isBotLastMessage =
+        lastMessage &&
+        !lastMessage.isUser &&
+        !lastMessage.isThinking &&
+        !lastMessage.isStreaming;
+
       setHasUserSentMessage(hasUserMessage);
       setCanShowNewQuestion(hasUserMessage && isBotLastMessage);
     } else {
@@ -207,7 +215,7 @@ function ChatScreen() {
 
   return (
     <React.Fragment>
-      <SafeAreaView className="flex-1 bg-gray-100">
+      <SafeAreaView className="flex-1 bg-gray-100" edges={["left", "right"]}>
         <StatusBar style="auto" />
         <ChatHeader
           title="Meu Guru IA"
