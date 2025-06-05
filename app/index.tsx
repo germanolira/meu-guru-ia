@@ -1,90 +1,134 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { ChatHeader } from "@/components/chat/ChatHeader";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { ChatMessageList } from "@/components/chat/ChatMessageList";
+import { LegendListRef } from "@legendapp/list";
+import React, { useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, SafeAreaView } from "react-native";
+import { Message } from "../types/chat";
 
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+const ChatScreen = () => {
+  const listRef = useRef<LegendListRef | null>(null);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "2",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "3",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "4",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "5",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "6",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "7",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "8",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "9",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "10",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+    {
+      id: "11",
+      text: "Olá! Como posso ajudar você hoje?",
+      isUser: false,
+      timestamp: new Date(),
+    },
+  ]);
+  const [inputText, setInputText] = useState("");
 
-export default function HomeScreen() {
+  const sendMessage = () => {
+    if (inputText.trim()) {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        text: inputText.trim(),
+        isUser: true,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, newMessage]);
+      setInputText("");
+
+      setTimeout(() => {
+        listRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+      setTimeout(() => {
+        const botResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          text: "Obrigado pela sua mensagem! Como posso ajudar mais?",
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, botResponse]);
+
+        setTimeout(() => {
+          listRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }, 1000);
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/index.tsx</ThemedText> to
-          see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Use the drawer menu to explore what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">NativeWind Test</ThemedText>
-        <View className="bg-blue-500 p-4 rounded-lg">
-          <Text className="text-white text-lg font-bold text-center">
-            🎉 NativeWind is working!
-          </Text>
-          <Text className="text-blue-100 text-center mt-2">
-            This blue box is styled with Tailwind CSS classes
-          </Text>
-        </View>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
-}
+    <SafeAreaView className="flex-1 bg-gray-100">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ChatHeader title="Meu Guru IA" />
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-  },
-});
+        <ChatMessageList messages={messages} ref={listRef} />
+
+        <ChatInput
+          inputText={inputText}
+          onChangeText={setInputText}
+          onSendMessage={sendMessage}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+};
+
+export default ChatScreen;
