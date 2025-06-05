@@ -16,12 +16,15 @@ export default function ChatsScreen() {
     removeChatById,
   } = useChatStorage();
 
-  const handleChatSelect = (chatId: string) => {
-    switchToChat(chatId);
-    router.push('/');
+  const handleChatSelect = async (chatId: string) => {
+    router.push({
+      pathname: "/(history)/[id]",
+      params: { id: chatId },
+    });
   };
 
   const handleNewChat = () => {
+    console.log('Criando novo chat');
     createNewChat();
     router.push('/');
   };

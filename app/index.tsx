@@ -18,8 +18,8 @@ function ChatScreen() {
     currentChatId,
     createNewChat,
     saveChatMessages,
+    setCurrentMessages,
   } = useChatStorage();
-  const [messages, setMessages] = useState<Message[]>(currentMessages);
   const [inputText, setInputText] = useState("");
   const [chatInputHeight, setChatInputHeight] = useState(
     Platform.OS === "ios" ? 88 : 70
@@ -51,7 +51,7 @@ function ChatScreen() {
     setHasUserSentMessage(true);
     setCanShowNewQuestion(false);
 
-    setMessages((prevMessages) => {
+    setCurrentMessages((prevMessages) => {
       const updatedMessages = prevMessages.map((msg) =>
         msg.role === "user" && msg.isLastUserMessage
           ? { ...msg, isLastUserMessage: false }
@@ -77,7 +77,7 @@ function ChatScreen() {
     Keyboard.dismiss();
 
     try {
-      const contextMessages = [...messages, userMessage];
+      const contextMessages = [...currentMessages, userMessage];
 
       streamingMessageIdRef.current = `bot-streaming-${Date.now()}`;
       const streamingMsg: Message = {
@@ -89,7 +89,7 @@ function ChatScreen() {
         isStreaming: true,
       };
 
-      setMessages((prevMessages) => {
+      setCurrentMessages((prevMessages) => {
         const newMessages = prevMessages.filter(
           (msg) => msg.id !== thinkingMessageIdRef.current
         );
@@ -103,7 +103,7 @@ function ChatScreen() {
         streaming: true,
         onStreamChunk: (chunk: string) => {
           accumulatedText += chunk;
-          setMessages((prevMessages) => {
+          setCurrentMessages((prevMessages) => {
             return prevMessages.map((msg) =>
               msg.id === streamingMessageIdRef.current
                 ? { ...msg, text: accumulatedText }
@@ -122,7 +122,7 @@ function ChatScreen() {
         isStreaming: false,
       };
 
-      setMessages((prevMessages) => {
+      setCurrentMessages((prevMessages) => {
         const newMessages = prevMessages.filter(
           (msg) => msg.id !== streamingMessageIdRef.current
         );
@@ -138,7 +138,7 @@ function ChatScreen() {
     } catch (error) {
       console.error("Error sending message:", error);
 
-      setMessages((prevMessages) => {
+      setCurrentMessages((prevMessages) => {
         const newMessages = prevMessages.filter(
           (msg) => msg.id !== streamingMessageIdRef.current
         );
@@ -153,7 +153,7 @@ function ChatScreen() {
         [{ text: "OK" }]
       );
     }
-  }, [inputText, sendMessageMutation, messages]);
+  }, [inputText, sendMessageMutation, currentMessages]);
 
   const handleChatInputLayout = useCallback(
     (event: any) => {
@@ -167,7 +167,16 @@ function ChatScreen() {
 
   const handleNewQuestion = useCallback(() => {
     createNewChat();
-    setMessages([]);
+    setCurrentMessages([]);
+    setInputText("");
+    setHasUserSentMessage(false);
+    setCanShowNewQuestion(false);
+    setIsBotThinkingGlobal(false);
+  }, [createNewChat]);
+
+  const handleNewChatFromHeader = useCallback(() => {
+    createNewChat();
+    setCurrentMessages([]);
     setInputText("");
     setHasUserSentMessage(false);
     setCanShowNewQuestion(false);
@@ -175,10 +184,22 @@ function ChatScreen() {
   }, [createNewChat]);
 
   useEffect(() => {
-    setMessages(currentMessages);
-  }, [currentChatId, currentMessages]);
+    // Atualizar estados baseados nas mensagens carregadas
+    if (currentMessages.length > 0) {
+      const hasUserMessage = currentMessages.some(msg => msg.isUser);
+      const lastMessage = currentMessages[currentMessages.length - 1];
+      const isBotLastMessage = lastMessage && !lastMessage.isUser && !lastMessage.isThinking && !lastMessage.isStreaming;
+      
+      setHasUserSentMessage(hasUserMessage);
+      setCanShowNewQuestion(hasUserMessage && isBotLastMessage);
+    } else {
+      setHasUserSentMessage(false);
+      setCanShowNewQuestion(false);
+    }
+  }, [currentMessages]);
 
   useEffect(() => {
+    // Só criar um novo chat na inicialização se não houver chat atual
     if (!currentChatId) {
       createNewChat();
     }
@@ -191,10 +212,11 @@ function ChatScreen() {
         <ChatHeader
           title="Meu Guru IA"
           onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+          onNewChatPress={handleNewChatFromHeader}
         />
 
         <ChatMessageList
-          messages={messages}
+          messages={currentMessages}
           ref={listRef}
           chatInputHeight={chatInputHeight}
         />
