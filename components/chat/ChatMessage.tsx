@@ -116,16 +116,18 @@ export function ChatMessage({ message }: ChatMessageProps) {
         ) : (
           <>
             <Markdown style={markdownStyle}>{message.text}</Markdown>
-            <Text
-              className={`text-xs mt-2 ${
-                message.isUser ? "text-blue-100" : "text-gray-500"
-              }`}
-            >
-              {message.timestamp.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
+            {!message.isStreaming && (
+              <Text
+                className={`text-xs mt-2 ${
+                  message.isUser ? "text-blue-100" : "text-gray-500"
+                }`}
+              >
+                {message.timestamp.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
+            )}
           </>
         )}
       </Animated.View>
