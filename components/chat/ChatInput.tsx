@@ -1,18 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  Text,
-  TextInput,
-  TouchableOpacity,
-  useColorScheme,
-  View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    useColorScheme,
+    View,
 } from "react-native";
 import Animated, {
-  Easing,
-  useAnimatedKeyboard,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    Easing,
+    useAnimatedKeyboard,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
@@ -116,13 +116,14 @@ export function ChatInput({
       onLayout={onLayoutContainer}
     >
       {hasUserSentMessage && canShowNewQuestion ? (
-        <View className="flex-row items-center justify-center px-3 py-2">
+        <View className="flex-row items-center justify-center px-3 py-3">
           <TouchableOpacity
             onPress={onNewQuestion}
-            className="bg-blue-500 px-6 py-3 rounded-full"
+            className="bg-blue-500 px-8 py-4 rounded-full shadow-lg flex-row items-center gap-2"
           >
+            <Ionicons name="add" size={20} color="white" />
             <Text className="text-white font-semibold text-base">
-              Nova Pergunta
+              Novo Chat
             </Text>
           </TouchableOpacity>
         </View>
