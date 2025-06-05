@@ -2,25 +2,33 @@ import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatMessageList } from "@/components/chat/ChatMessageList";
 import { useSendMessage } from "@/hooks/useChatAPI";
+import { useChatStorage } from "@/hooks/useChatStorage";
 import { LegendListRef } from "@legendapp/list";
 import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Keyboard, Platform, SafeAreaView } from "react-native";
 import { Message } from "../types/chat";
-
-const initialMessages: Message[] = [];
 
 function ChatScreen() {
   const navigation = useNavigation();
   const listRef = useRef<LegendListRef | null>(null);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const {
+    currentMessages,
+    currentChatId,
+    createNewChat,
+    saveChatMessages,
+  } = useChatStorage();
+  const [messages, setMessages] = useState<Message[]>(currentMessages);
   const [inputText, setInputText] = useState("");
   const [chatInputHeight, setChatInputHeight] = useState(
     Platform.OS === "ios" ? 88 : 70
   );
   const [isBotThinkingGlobal, setIsBotThinkingGlobal] = useState(false);
+  const [hasUserSentMessage, setHasUserSentMessage] = useState(false);
+  const [canShowNewQuestion, setCanShowNewQuestion] = useState(false);
   const thinkingMessageIdRef = useRef<string | null>(null);
+  const streamingMessageIdRef = useRef<string | null>(null);
   const sendMessageMutation = useSendMessage();
 
   const handleToggleThinkingMode = useCallback(() => {
@@ -39,6 +47,9 @@ function ChatScreen() {
       role: "user",
       isLastUserMessage: true,
     };
+
+    setHasUserSentMessage(true);
+    setCanShowNewQuestion(false);
 
     setMessages((prevMessages) => {
       const updatedMessages = prevMessages.map((msg) =>
@@ -68,52 +79,71 @@ function ChatScreen() {
     try {
       const contextMessages = [...messages, userMessage];
 
-      const response = await sendMessageMutation.mutateAsync({
-        messages: contextMessages,
-        model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
-        streaming: false,
-      });
-
-      const botReply: Message = {
-        id: `bot-${Date.now()}`,
-        text: response || "Desculpe, não consegui gerar uma resposta.",
+      streamingMessageIdRef.current = `bot-streaming-${Date.now()}`;
+      const streamingMsg: Message = {
+        id: streamingMessageIdRef.current,
+        text: "",
         isUser: false,
         timestamp: new Date(),
         role: "assistant",
-        isThinking: false,
+        isStreaming: true,
       };
 
-      setMessages((prevMessages) => {
-        let newMessages = [...prevMessages];
-        if (thinkingMessageIdRef.current) {
-          const thinkingIndex = newMessages.findIndex(
-            (msg) => msg.id === thinkingMessageIdRef.current
-          );
-          if (thinkingIndex !== -1) {
-            newMessages.splice(thinkingIndex, 1, botReply);
-          } else {
-            newMessages = [
-              ...newMessages.filter(
-                (msg) => msg.id !== thinkingMessageIdRef.current
-              ),
-              botReply,
-            ];
-          }
-          thinkingMessageIdRef.current = null;
-        } else {
-          newMessages = [...newMessages, botReply];
-        }
-        return newMessages;
-      });
-    } catch (error) {
-      console.error("Error sending message:", error);
-
-      // Remove thinking indicator and show error
       setMessages((prevMessages) => {
         const newMessages = prevMessages.filter(
           (msg) => msg.id !== thinkingMessageIdRef.current
         );
-        thinkingMessageIdRef.current = null;
+        return [...newMessages, streamingMsg];
+      });
+
+      let accumulatedText = "";
+      const response = await sendMessageMutation.mutateAsync({
+        messages: contextMessages,
+        model: "meta-llama/llama-3.3-8b-instruct:free",
+        streaming: true,
+        onStreamChunk: (chunk: string) => {
+          accumulatedText += chunk;
+          setMessages((prevMessages) => {
+            return prevMessages.map((msg) =>
+              msg.id === streamingMessageIdRef.current
+                ? { ...msg, text: accumulatedText }
+                : msg
+            );
+          });
+        },
+      });
+
+      const botReply: Message = {
+        id: `bot-${Date.now()}`,
+        text: accumulatedText || response || "Desculpe, não consegui gerar uma resposta.",
+        isUser: false,
+        timestamp: new Date(),
+        role: "assistant",
+        isStreaming: false,
+      };
+
+      setMessages((prevMessages) => {
+        const newMessages = prevMessages.filter(
+          (msg) => msg.id !== streamingMessageIdRef.current
+        );
+        const finalMessages = [...newMessages, botReply];
+        setCanShowNewQuestion(true);
+        
+        if (currentChatId) {
+          saveChatMessages(finalMessages);
+        }
+        
+        return finalMessages;
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+
+      setMessages((prevMessages) => {
+        const newMessages = prevMessages.filter(
+          (msg) => msg.id !== streamingMessageIdRef.current
+        );
+        streamingMessageIdRef.current = null;
+        setCanShowNewQuestion(true);
         return newMessages;
       });
 
@@ -134,6 +164,25 @@ function ChatScreen() {
     },
     [chatInputHeight]
   );
+
+  const handleNewQuestion = useCallback(() => {
+    createNewChat();
+    setMessages([]);
+    setInputText("");
+    setHasUserSentMessage(false);
+    setCanShowNewQuestion(false);
+    setIsBotThinkingGlobal(false);
+  }, [createNewChat]);
+
+  useEffect(() => {
+    setMessages(currentMessages);
+  }, [currentChatId, currentMessages]);
+
+  useEffect(() => {
+    if (!currentChatId) {
+      createNewChat();
+    }
+  }, [currentChatId, createNewChat]);
 
   return (
     <React.Fragment>
@@ -157,6 +206,9 @@ function ChatScreen() {
         onLayoutContainer={handleChatInputLayout}
         onToggleThinkingMode={handleToggleThinkingMode}
         isThinkingActive={isBotThinkingGlobal}
+        hasUserSentMessage={hasUserSentMessage}
+        canShowNewQuestion={canShowNewQuestion}
+        onNewQuestion={handleNewQuestion}
       />
     </React.Fragment>
   );
