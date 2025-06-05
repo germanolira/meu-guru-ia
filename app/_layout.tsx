@@ -17,7 +17,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
     },
     mutations: {
       retry: 1,
@@ -32,7 +32,6 @@ export default function RootLayout() {
   });
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
@@ -44,14 +43,21 @@ export default function RootLayout() {
         >
           <Drawer>
             <Drawer.Screen
-              name="index" // This references the index.tsx file
+              name="index"
               options={{
-                drawerLabel: "Home",
-                title: "Home",
-                headerShown: false, // Hide header for the drawer navigator
+                drawerLabel: "Chat",
+                title: "Chat",
+                headerShown: false,
               }}
             />
-            <Drawer.Screen name="+not-found" />
+            <Drawer.Screen
+              name="chats"
+              options={{
+                drawerLabel: "Histórico de Chats",
+                title: "Chats",
+                headerShown: true,
+              }}
+            />
           </Drawer>
           <StatusBar style="auto" />
         </ThemeProvider>
