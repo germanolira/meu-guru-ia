@@ -58,6 +58,13 @@ export default function RootLayout() {
                 headerShown: true,
               }}
             />
+            <Drawer.Screen
+              name="(history)"
+              options={{
+                drawerItemStyle: { display: "none" },
+                headerShown: false,
+              }}
+            />
           </Drawer>
           <StatusBar style="auto" />
         </ThemeProvider>
