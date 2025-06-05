@@ -8,52 +8,64 @@ export function useChatStorage() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { generateTitle, generateTitleFromBot } = useGenerateTitle();
+  const { generateTitle, generateTitleAndCategoryFromBot } = useGenerateTitle();
 
   const loadChats = useCallback(async () => {
     try {
       setIsLoading(true);
+      
       const savedChats = await getChats();
       setChats(savedChats);
       
-      if (!currentChatId && savedChats.length > 0) {
-        const latestChat = savedChats.sort((a, b) => b.updatedAt - a.updatedAt)[0];
-        setCurrentChatId(latestChat.id);
-        setCurrentMessages(latestChat.messages);
-      }
     } catch (error) {
-      console.error('Erro ao carregar chats:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [currentChatId]);
+  }, []);
 
   const saveCurrentChat = useCallback(async (messages: Message[]) => {
-    if (!currentChatId || messages.length === 0) return;
+    if (!currentChatId || messages.length === 0) {
+      return;
+    }
+
+    const filteredMessages = messages.filter(msg => !msg.isThinking && !msg.isStreaming);
+    
+    if (filteredMessages.length === 0) {
+      return;
+    }
 
     try {
       const now = Date.now();
-      const firstUserMessage = messages.find(msg => msg.isUser)?.text || '';
-      const firstBotMessage = messages.find(msg => !msg.isUser && !msg.isThinking && !msg.isStreaming)?.text || '';
+      const firstUserMessage = filteredMessages.find(msg => msg.isUser)?.text || '';
+      const firstBotMessage = filteredMessages.find(msg => !msg.isUser)?.text || '';
       
       let title: string;
+      let category: string;
       if (firstUserMessage && firstBotMessage) {
-        title = await generateTitleFromBot(firstUserMessage, firstBotMessage);
+        try {
+          const result = await generateTitleAndCategoryFromBot(firstUserMessage, firstBotMessage);
+          title = result.title;
+          category = result.category;
+        } catch (error) {
+          title = generateTitle(firstUserMessage);
+          category = 'Outros';
+        }
       } else {
         title = generateTitle(firstUserMessage);
+        category = 'Outros';
       }
 
       const chatToSave: Chat = {
         id: currentChatId,
         title,
-        messages,
+        category,
+        messages: filteredMessages,
         createdAt: now,
         updatedAt: now
       };
 
       await addOrUpdateChat(chatToSave);
       
-      // Atualizar lista local
       setChats(prev => {
         const updated = [...prev];
         const index = updated.findIndex(c => c.id === currentChatId);
@@ -65,54 +77,48 @@ export function useChatStorage() {
         return updated.sort((a, b) => b.updatedAt - a.updatedAt);
       });
     } catch (error) {
-      console.error('Erro ao salvar chat:', error);
     }
-  }, [currentChatId, generateTitle, generateTitleFromBot]);
+  }, [currentChatId, generateTitle, generateTitleAndCategoryFromBot]);
 
-  // Criar novo chat
   const createNewChat = useCallback(() => {
     const newChatId = `chat-${Date.now()}`;
     setCurrentChatId(newChatId);
     setCurrentMessages([]);
   }, []);
 
-  // Alternar para um chat existente
   const switchToChat = useCallback(async (chatId: string) => {
     try {
       const chat = await getChatById(chatId);
       if (chat) {
         setCurrentChatId(chatId);
-        setCurrentMessages(chat.messages);
+        setCurrentMessages([...chat.messages]);
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } else {
       }
     } catch (error) {
-      console.error('Erro ao carregar chat:', error);
     }
   }, []);
 
-  // Deletar chat
   const removeChatById = useCallback(async (chatId: string) => {
     try {
       await deleteChat(chatId);
       setChats(prev => prev.filter(c => c.id !== chatId));
       
-      // Se o chat atual foi deletado, criar um novo
       if (currentChatId === chatId) {
         createNewChat();
       }
     } catch (error) {
-      console.error('Erro ao deletar chat:', error);
     }
   }, [currentChatId, createNewChat]);
 
-  // Salvar mensagens sem atualizar estado local (para evitar loops)
   const saveChatMessages = useCallback((messages: Message[]) => {
-    // Auto-salvar quando há pelo menos uma mensagem do usuário
     if (messages.some(msg => msg.isUser)) {
       saveCurrentChat(messages);
+    } else {
     }
   }, [saveCurrentChat]);
 
-  // Carregar chats na inicialização
   useEffect(() => {
     loadChats();
   }, [loadChats]);
@@ -121,6 +127,7 @@ export function useChatStorage() {
     chats,
     currentChatId,
     currentMessages,
+    setCurrentMessages,
     isLoading,
     createNewChat,
     switchToChat,
