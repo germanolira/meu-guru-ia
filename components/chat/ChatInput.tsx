@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  Text,
   TextInput,
   TouchableOpacity,
   useColorScheme,
@@ -27,6 +28,9 @@ interface ChatInputProps {
   onLayoutContainer?: (event: any) => void;
   onToggleThinkingMode?: () => void;
   isThinkingActive?: boolean;
+  hasUserSentMessage?: boolean;
+  canShowNewQuestion?: boolean;
+  onNewQuestion?: () => void;
 }
 
 export function ChatInput({
@@ -36,6 +40,9 @@ export function ChatInput({
   onLayoutContainer,
   onToggleThinkingMode,
   isThinkingActive = false,
+  hasUserSentMessage = false,
+  canShowNewQuestion = false,
+  onNewQuestion,
 }: ChatInputProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? "light";
@@ -69,12 +76,11 @@ export function ChatInput({
   }, [inputText, sendButtonScale, sendButtonOpacity]);
 
   const handleTextChange = (text: string) => {
-    onChangeText(text); // Propagate to parent
+    onChangeText(text);
     const hasText = text.trim() !== "";
 
-    setIsEffectivelyEnabled(hasText); // Update local state immediately
+    setIsEffectivelyEnabled(hasText);
 
-    // Animation updates (these are the same as before, ensuring animations react to typing)
     sendButtonScale.value = withTiming(hasText ? 1 : 0.9, {
       duration: 200,
       easing: Easing.out(Easing.exp),
@@ -109,58 +115,74 @@ export function ChatInput({
       `}
       onLayout={onLayoutContainer}
     >
-      <View className="flex-row items-end px-3 py-2 gap-2">
-        <View className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm flex-row items-end p-1">
-          <TextInput
-            className="flex-1 min-h-[40px] max-h-[120px] px-3 py-2 text-base text-gray-800 align-top"
-            placeholder="Pergunte ao Meu Guru"
-            value={inputText}
-            onChangeText={handleTextChange}
-            multiline
-            placeholderTextColor="#9CA3AF"
-            maxLength={2000}
-            underlineColorAndroid="transparent"
-            textAlignVertical="top"
-          />
-          {onToggleThinkingMode && (
-            <View
-              style={{
-                height: 40,
-                justifyContent: "center",
-                alignItems: "center",
-                marginHorizontal: 2,
-              }}
-            >
-              <AnimatedIcon
-                name="globe-outline"
-                size={24}
-                color={
-                  isThinkingActive ? Colors[theme].primary : Colors[theme].icon
-                }
-                onPress={onToggleThinkingMode}
-                isActive={isThinkingActive}
-                style={{
-                  padding: 6, // Slightly reduced padding for a tighter fit
-                  borderRadius: 18,
-                }}
-              />
-            </View>
-          )}
-          <AnimatedTouchableOpacity
-            style={[animatedSendButtonStyle, { marginRight: 2 }]}
-            onPress={handleSend}
-            disabled={!isEffectivelyEnabled}
-            className={`h-[40px] w-[40px] justify-center items-center rounded-full ${isEffectivelyEnabled ? "bg-blue-500" : "bg-gray-300"
-              }`}
+      {hasUserSentMessage && canShowNewQuestion ? (
+        <View className="flex-row items-center justify-center px-3 py-2">
+          <TouchableOpacity
+            onPress={onNewQuestion}
+            className="bg-blue-500 px-6 py-3 rounded-full"
           >
-            <Ionicons
-              name="arrow-up"
-              size={22}
-              color={isEffectivelyEnabled ? "white" : "#9CA3AF"}
-            />
-          </AnimatedTouchableOpacity>
+            <Text className="text-white font-semibold text-base">
+              Nova Pergunta
+            </Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      ) : (
+        <View className="flex-row items-end px-3 py-2 gap-2">
+          <View className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm flex-row items-end p-1">
+            <TextInput
+              className="flex-1 min-h-[40px] max-h-[120px] px-3 py-2 text-base text-gray-800 align-top"
+              placeholder="Pergunte ao Meu Guru"
+              value={inputText}
+              onChangeText={handleTextChange}
+              multiline
+              placeholderTextColor="#9CA3AF"
+              maxLength={2000}
+              underlineColorAndroid="transparent"
+              textAlignVertical="top"
+              editable={!hasUserSentMessage}
+            />
+            {onToggleThinkingMode && !hasUserSentMessage && (
+              <View
+                style={{
+                  height: 40,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginHorizontal: 2,
+                }}
+              >
+                <AnimatedIcon
+                  name="globe-outline"
+                  size={24}
+                  color={
+                    isThinkingActive ? Colors[theme].primary : Colors[theme].icon
+                  }
+                  onPress={onToggleThinkingMode}
+                  isActive={isThinkingActive}
+                  style={{
+                    borderRadius: 18,
+                  }}
+                />
+              </View>
+            )}
+            {!hasUserSentMessage && (
+              <AnimatedTouchableOpacity
+                style={[animatedSendButtonStyle, { marginRight: 2 }]}
+                onPress={handleSend}
+                disabled={!isEffectivelyEnabled}
+                className={`h-[40px] w-[40px] justify-center items-center rounded-full ${
+                  isEffectivelyEnabled ? "bg-blue-500" : "bg-gray-300"
+                }`}
+              >
+                <Ionicons
+                  name="arrow-up"
+                  size={22}
+                  color={isEffectivelyEnabled ? "white" : "#9CA3AF"}
+                />
+              </AnimatedTouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
     </Animated.View>
   );
 }
