@@ -12,6 +12,7 @@ export interface Message {
 export interface Chat {
   id: string;
   title: string;
+  category: string;
   messages: Message[];
   createdAt: number;
   updatedAt: number;
