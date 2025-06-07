@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { addOrUpdateChat, deleteChat, getChatById, getChats } from '../lib/storage';
+import { addOrUpdateChat, deleteChat, getChatById, getChats, getFavoriteChats, toggleChatFavorite } from '../lib/storage';
 import { Chat, Message } from '../types/chat';
 import { useGenerateTitle } from './useGenerateTitle';
 
@@ -119,6 +119,28 @@ export function useChatStorage() {
     }
   }, [saveCurrentChat]);
 
+  const toggleFavorite = useCallback(async (chatId: string) => {
+    try {
+      await toggleChatFavorite(chatId);
+      setChats(prev => prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, isFavorite: !chat.isFavorite }
+          : chat
+      ));
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  }, []);
+
+  const getFavorites = useCallback(async () => {
+    try {
+      return await getFavoriteChats();
+    } catch (error) {
+      console.error('Error getting favorites:', error);
+      return [];
+    }
+  }, []);
+
   useEffect(() => {
     loadChats();
   }, [loadChats]);
@@ -133,6 +155,8 @@ export function useChatStorage() {
     switchToChat,
     removeChatById,
     saveChatMessages,
-    refreshChats: loadChats
+    refreshChats: loadChats,
+    toggleFavorite,
+    getFavorites
   };
 } 
