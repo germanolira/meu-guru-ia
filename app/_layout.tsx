@@ -1,17 +1,12 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Drawer } from "expo-router/drawer";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
-import { useColorScheme } from "@/hooks/useColorScheme";
 import "../global.css";
 
 const queryClient = new QueryClient({
@@ -27,7 +22,6 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -40,34 +34,17 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <ThemeProvider
-            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-          >
-            <Drawer>
-              <Drawer.Screen
-                name="index"
+          <ThemeProvider value={DefaultTheme}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="[id]"
                 options={{
-                  drawerLabel: "Chat",
-                  title: "Chat",
+                  presentation: "modal",
                   headerShown: false,
                 }}
               />
-              <Drawer.Screen
-                name="chats"
-                options={{
-                  drawerLabel: "Histórico de Chats",
-                  title: "Chats",
-                  headerShown: true,
-                }}
-              />
-              <Drawer.Screen
-                name="(history)"
-                options={{
-                  drawerItemStyle: { display: "none" },
-                  headerShown: false,
-                }}
-              />
-            </Drawer>
+            </Stack>
             <StatusBar style="auto" />
           </ThemeProvider>
         </GestureHandlerRootView>

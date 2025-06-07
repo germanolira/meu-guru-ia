@@ -1,18 +1,15 @@
 import React, { useEffect } from "react";
-import { View, useColorScheme } from "react-native";
+import { View } from "react-native";
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 function ThinkingIndicator() {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme ?? "light";
-
   const translateY1 = useSharedValue(0);
   const opacity1 = useSharedValue(0.4);
   const scale1 = useSharedValue(0.8);
@@ -90,46 +87,47 @@ function ThinkingIndicator() {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
-      
+
       translateY1.value = 0;
       opacity1.value = 0.4;
       scale1.value = 0.8;
-      
+
       translateY2.value = 0;
       opacity2.value = 0.4;
       scale2.value = 0.8;
-      
+
       translateY3.value = 0;
       opacity3.value = 0.4;
       scale3.value = 0.8;
     };
-  }, [translateY1, opacity1, scale1, translateY2, opacity2, scale2, translateY3, opacity3, scale3]);
+  }, [
+    translateY1,
+    opacity1,
+    scale1,
+    translateY2,
+    opacity2,
+    scale2,
+    translateY3,
+    opacity3,
+    scale3,
+  ]);
 
   const animatedStyle1 = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: translateY1.value },
-      { scale: scale1.value },
-    ],
+    transform: [{ translateY: translateY1.value }, { scale: scale1.value }],
     opacity: opacity1.value,
   }));
 
   const animatedStyle2 = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: translateY2.value },
-      { scale: scale2.value },
-    ],
+    transform: [{ translateY: translateY2.value }, { scale: scale2.value }],
     opacity: opacity2.value,
   }));
 
   const animatedStyle3 = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: translateY3.value },
-      { scale: scale3.value },
-    ],
+    transform: [{ translateY: translateY3.value }, { scale: scale3.value }],
     opacity: opacity3.value,
   }));
 
-  const dotColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
+  const dotColor = "#6B7280";
 
   return (
     <View className="justify-center items-center min-h-[32px] py-2">
@@ -144,7 +142,7 @@ function ThinkingIndicator() {
               shadowOpacity: 0.3,
               shadowRadius: 4,
               elevation: 3,
-            }
+            },
           ]}
           className="w-[8px] h-[8px] rounded-full"
         />
@@ -158,7 +156,7 @@ function ThinkingIndicator() {
               shadowOpacity: 0.3,
               shadowRadius: 4,
               elevation: 3,
-            }
+            },
           ]}
           className="w-[8px] h-[8px] rounded-full"
         />
@@ -172,7 +170,7 @@ function ThinkingIndicator() {
               shadowOpacity: 0.3,
               shadowRadius: 4,
               elevation: 3,
-            }
+            },
           ]}
           className="w-[8px] h-[8px] rounded-full"
         />
@@ -182,4 +180,3 @@ function ThinkingIndicator() {
 }
 
 export { ThinkingIndicator };
-

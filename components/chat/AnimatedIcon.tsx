@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useEffect } from "react";
 import { TouchableOpacity } from "react-native";
 import Animated, {
@@ -46,6 +47,11 @@ function AnimatedIcon({
     });
   };
 
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   useEffect(() => {
     if (name === "sparkles" && isActive) {
       rotation.value = withSequence(
@@ -70,7 +76,7 @@ function AnimatedIcon({
   return (
     <AnimatedTouchableOpacity
       style={[style, animatedStyle]}
-      onPress={onPress}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
