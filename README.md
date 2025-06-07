@@ -100,4 +100,4 @@ Na saída do terminal, você encontrará opções para abrir o app no [Expo Go](
 - Envio de documentos e imagens no chat.
 - Integração entre web e app via deep linking: o usuário será redirecionado diretamente para a tela de chat com o ID correspondente (por exemplo, `/chat/123`), proporcionando uma experiência fluida entre plataformas.
 - Acesso a pesquisas acadêmicas públicas (papers) via deep research ou pesquisas na web.
-- Expansão da funcionalidade da câmera para permitir o uso das imagens no chat.
+- Expansão da funcionalidade da câmera para permitir o uso das imagens no chat, atualmente a funcionalidade câmera não está funcionando, apenas mockado.
