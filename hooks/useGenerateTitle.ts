@@ -1,6 +1,11 @@
 import { generateChatTitle } from '../lib/storage';
 import { useSendMessage } from './useChatAPI';
 
+const USE_OPENAI = process.env.EXPO_PUBLIC_USE_OPENAI === 'true';
+const OPENROUTER_MODEL = 'openai/gpt-4o-mini';
+const OPENAI_MODEL = 'gpt-4o-mini';
+const defaultModel = USE_OPENAI ? OPENAI_MODEL : OPENROUTER_MODEL;
+
 interface TitleAndCategory {
   title: string;
   category: string;
@@ -13,35 +18,38 @@ export function useGenerateTitle() {
     try {
       const titlePrompt = `Com base nesta conversa entre usuário e assistente, gere um título curto (máximo 4 palavras) e uma categoria que capture o tema principal.
 
-Usuário: ${firstUserMessage}
-Assistente: ${botResponse}
+      Usuário: ${firstUserMessage}
+      Assistente: ${botResponse}
 
-Responda APENAS em formato JSON válido seguindo este exemplo:
-{"title": "Receita de Bolo", "category": "Culinária"}
+      Responda APENAS em formato JSON válido seguindo este exemplo:
+      {"title": "Receita de Bolo", "category": "Culinária"}
 
-Categorias possíveis: Trabalho, Estudo, Tecnologia, Saúde, Culinária, Entretenimento, Viagem, Finanças, Relacionamento, Criatividade, Outros
+      Categorias possíveis: Trabalho, Estudo, Tecnologia, Saúde, Culinária, Entretenimento, Viagem, Finanças, Relacionamento, Criatividade, Outros
 
-JSON:`;
+      JSON:`;
 
       const response = await sendMessageMutation.mutateAsync({
         messages: [{ id: 'temp', text: titlePrompt, isUser: true, timestamp: new Date(), role: 'user' }],
-        model: "meta-llama/llama-3.3-8b-instruct:free",
+        model: defaultModel,
         streaming: false,
       });
 
-      try {
-        const parsed = JSON.parse(response?.trim() || '{}');
-        if (parsed.title && parsed.category) {
-          return {
-            title: parsed.title,
-            category: parsed.category
-          };
+      if (response?.text) {
+        try {
+          const cleanedResponse = response.text.replace(/^.*?(\{.*\}).*$/s, '$1');
+          const parsed = JSON.parse(cleanedResponse);
+          
+          if (parsed && typeof parsed === 'object' && parsed.title && parsed.category) {
+            return {
+              title: String(parsed.title).trim(),
+              category: String(parsed.category).trim()
+            };
+          }
+        } catch (parseError) {
+          console.log('Erro ao fazer parse do JSON, usando fallback:', parseError);
         }
-      } catch (parseError) {
-        console.log('Erro ao fazer parse do JSON, usando fallback');
       }
 
-      // Fallback se JSON inválido
       return {
         title: generateChatTitle(firstUserMessage),
         category: 'Outros'
