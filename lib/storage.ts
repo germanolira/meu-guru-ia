@@ -11,11 +11,27 @@ export async function getChats(): Promise<Chat[]> {
   return chats.map((chat: any) => ({
     ...chat,
     category: chat.category || 'Outros',
+    isFavorite: chat.isFavorite || false,
     messages: chat.messages.map((msg: any) => ({
       ...msg,
       timestamp: new Date(msg.timestamp)
     }))
   }));
+}
+
+export async function getFavoriteChats(): Promise<Chat[]> {
+  const chats = await getChats();
+  return chats.filter(chat => chat.isFavorite);
+}
+
+export async function toggleChatFavorite(chatId: string): Promise<void> {
+  const chats = await getChats();
+  const chatIndex = chats.findIndex(c => c.id === chatId);
+  
+  if (chatIndex > -1) {
+    chats[chatIndex].isFavorite = !chats[chatIndex].isFavorite;
+    await saveChats(chats);
+  }
 }
 
 export async function saveChats(chats: Chat[]): Promise<void> {
