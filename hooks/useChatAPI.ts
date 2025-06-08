@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system';
 import {
-    ChatMessage,
-    sendChatMessage,
-    sendChatMessageStream,
+  ChatMessage,
+  sendChatMessage,
+  sendChatMessageStream,
 } from '../lib/openai';
 import { Annotation, Message } from '../types/chat';
 
@@ -30,6 +30,10 @@ INSTRUÇÕES IMPORTANTES SOBRE LATEX:
   * Para somatórios: $$\\sum_{i=1}^{n} x_i$$
   * Para limites: $$\\lim_{x \\to \\infty} f(x)$$
   * Para derivadas: $\\frac{df}{dx}$ ou $f'(x)$
+  * Para matrizes: $$\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$$
+  * Para sistemas de equações: $$\\begin{cases} x + y = 1 \\\\ x - y = 0 \\end{cases}$$
+
+IMPORTANTE: Use escape duplo (\\\\) para comandos LaTeX em strings JavaScript
 
 OUTRAS INSTRUÇÕES:
 - Seja didático e explique passo a passo

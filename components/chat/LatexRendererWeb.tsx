@@ -1,7 +1,7 @@
 "use dom";
 
 import { useDOMImperativeHandle, type DOMImperativeFactory } from "expo/dom";
-import React, { Ref, useEffect, useRef } from "react";
+import React, { Ref, useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -33,7 +33,7 @@ const sanitizeLatex = (content: string): string => {
     .trim();
 };
 
-export default function LatexDOMComponent({
+export default function LatexWebComponent({
   content,
   isUser = false,
   isBlock = false,
@@ -41,13 +41,19 @@ export default function LatexDOMComponent({
 }: LatexDOMComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const mathJaxLoadedRef = useRef(false);
+  const [mathJaxReady, setMathJaxReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const textColor = isUser ? "#FFFFFF" : "#1F2937";
   const backgroundColor = isUser ? "#8b5cf6" : "transparent";
 
   const renderMath = async (mathContent: string) => {
-    if (!contentRef.current) return;
+    if (!contentRef.current || !mathJaxReady) {
+      if (contentRef.current) {
+        contentRef.current.textContent = mathContent;
+      }
+      return;
+    }
 
     try {
       const sanitizedContent = sanitizeLatex(mathContent);
@@ -59,26 +65,25 @@ export default function LatexDOMComponent({
         return;
       }
 
-      contentRef.current.innerHTML = isBlock
-        ? `$$${sanitizedContent}$$`
-        : `$${sanitizedContent}$`;
+      const formattedContent = isBlock
+        ? `\\[${sanitizedContent}\\]`
+        : `\\(${sanitizedContent}\\)`;
 
-      if (window.MathJax && window.MathJax.typesetPromise) {
+      contentRef.current.innerHTML = formattedContent;
+
+      if (window.MathJax?.typesetPromise) {
         await window.MathJax.typesetPromise([contentRef.current]);
-      } else if (window.MathJax && window.MathJax.Hub) {
-        window.MathJax.Hub.Queue([
-          "Typeset",
-          window.MathJax.Hub,
-          contentRef.current,
-        ]);
-      } else if (window.MathJax && window.MathJax.startup) {
+        setError(null);
+      } else if (window.MathJax?.startup?.promise) {
         await window.MathJax.startup.promise;
         if (window.MathJax.typesetPromise) {
           await window.MathJax.typesetPromise([contentRef.current]);
+          setError(null);
         }
       }
-    } catch (error) {
-      console.error("MathJax render error:", error);
+    } catch (err) {
+      console.error("MathJax render error:", err);
+      setError("LaTeX Error");
       if (contentRef.current) {
         contentRef.current.textContent = mathContent;
       }
@@ -95,83 +100,107 @@ export default function LatexDOMComponent({
         }
       },
     }),
-    []
+    [mathJaxReady, isBlock]
   );
 
   useEffect(() => {
-    const initializeMathJax = () => {
-      if (mathJaxLoadedRef.current) return;
+    let mounted = true;
 
-      if (!window.MathJax) {
+    const loadMathJax = async () => {
+      try {
+        if (window.MathJax) {
+          if (window.MathJax.startup?.promise) {
+            await window.MathJax.startup.promise;
+          }
+          if (mounted) {
+            setMathJaxReady(true);
+          }
+          return;
+        }
+
         window.MathJax = {
           tex: {
-            inlineMath: [["$", "$"]],
-            displayMath: [["$$", "$$"]],
+            inlineMath: [["\\(", "\\)"]],
+            displayMath: [["\\[", "\\]"]],
             processEscapes: true,
             processEnvironments: true,
+            packages: { "[+]": ["ams", "newcommand", "configmacros"] },
             formatError: (jax: any, err: any) => {
               console.error("MathJax formatting error:", err);
               return jax.formatError(err);
             },
           },
           options: {
-            skipHtmlTags: ["script", "noscript", "style", "textarea", "pre"],
+            skipHtmlTags: [
+              "script",
+              "noscript",
+              "style",
+              "textarea",
+              "pre",
+              "code",
+            ],
             ignoreHtmlClass: "tex2jax_ignore",
             processHtmlClass: "tex2jax_process",
+            renderActions: {
+              addMenu: [0, "", ""],
+            },
+          },
+          loader: {
+            load: ["[tex]/ams", "[tex]/newcommand", "[tex]/configmacros"],
           },
           startup: {
             ready: () => {
-              console.log("MathJax is ready");
+              console.log("MathJax startup ready");
               window.MathJax.startup.defaultReady();
-              mathJaxLoadedRef.current = true;
-              renderMath(content);
+              if (mounted) {
+                setMathJaxReady(true);
+              }
             },
             failed: (err: any) => {
               console.error("MathJax startup failed:", err);
+              if (mounted) {
+                setError("MathJax failed to start");
+              }
             },
           },
         };
 
         const script = document.createElement("script");
-        script.src =
-          "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js";
+        script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js";
         script.async = true;
+
         script.onload = () => {
-          console.log("MathJax script loaded");
+          console.log("MathJax script loaded successfully");
         };
+
         script.onerror = () => {
-          console.error("Failed to load MathJax");
-          if (contentRef.current) {
-            contentRef.current.textContent = content;
+          console.error("Failed to load MathJax script");
+          if (mounted) {
+            setError("Failed to load MathJax");
           }
         };
+
         document.head.appendChild(script);
-      } else {
-        if (window.MathJax.startup && window.MathJax.startup.promise) {
-          window.MathJax.startup.promise.then(() => {
-            mathJaxLoadedRef.current = true;
-            renderMath(content);
-          });
-        } else if (window.MathJax.typesetPromise) {
-          mathJaxLoadedRef.current = true;
-          renderMath(content);
-        } else {
-          setTimeout(() => {
-            mathJaxLoadedRef.current = true;
-            renderMath(content);
-          }, 1000);
+      } catch (err) {
+        console.error("Error loading MathJax:", err);
+        if (mounted) {
+          setError("Error loading MathJax");
         }
       }
     };
 
-    initializeMathJax();
+    loadMathJax();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (mathJaxLoadedRef.current) {
+    if (mathJaxReady && content) {
       renderMath(content);
     }
-  }, [content, isBlock]);
+  }, [content, isBlock, mathJaxReady]);
 
   return (
     <div
@@ -190,6 +219,7 @@ export default function LatexDOMComponent({
         minHeight: "40px",
         overflow: "hidden",
         borderRadius: "8px",
+        position: "relative",
       }}
     >
       <div
@@ -198,28 +228,57 @@ export default function LatexDOMComponent({
           textAlign: isBlock ? "center" : "left",
           width: "100%",
           color: textColor,
+          minHeight: "20px",
         }}
         className="math-container"
       >
-        {content}
+        {!mathJaxReady && content}
       </div>
 
+      {error && (
+        <div
+          style={{
+            position: "absolute",
+            top: "2px",
+            right: "2px",
+            fontSize: "10px",
+            color: "#ff6b6b",
+            background: "rgba(255, 255, 255, 0.9)",
+            padding: "2px 4px",
+            borderRadius: "4px",
+            cursor: "help",
+          }}
+          title={error}
+        >
+          ⚠️
+        </div>
+      )}
+
       <style>{`
-        .MathJax {
-          color: ${textColor} !important;
-        }
-        .MathJax_Display {
-          margin: 4px 0 !important;
-        }
-        .math-container .MathJax {
-          color: ${textColor} !important;
-        }
         .math-container {
-          min-height: 20px;
           display: flex;
           align-items: center;
           justify-content: ${isBlock ? "center" : "flex-start"};
+          word-wrap: break-word;
+          overflow-wrap: break-word;
         }
+        
+        .math-container .MathJax {
+          color: ${textColor} !important;
+        }
+        
+        .math-container .MathJax_Display {
+          margin: 4px 0 !important;
+        }
+        
+        .math-container mjx-container {
+          color: ${textColor} !important;
+        }
+        
+        .math-container mjx-container[display="true"] {
+          margin: 4px 0 !important;
+        }
+        
         .math-container .MathJax_Error {
           color: #ff6b6b !important;
           font-size: 12px !important;

@@ -18,7 +18,7 @@ import Animated, {
 import { useCopyText } from "../../hooks/useCopyText";
 import { useTTS } from "../../hooks/useTTS";
 import { Message } from "../../types/chat";
-import { LatexRenderer } from "./LatexRenderer";
+import { LatexRenderer } from "./LatexRendererWrapper";
 import { MessageAnnotations } from "./MessageAnnotations";
 import { SearchFlow } from "./SearchFlow";
 import { ThinkingIndicator } from "./ThinkingIndicator";
@@ -29,6 +29,13 @@ interface ChatMessageProps {
 }
 
 const renderLatexContent = (text: string, isUser: boolean) => {
+  const processedText = text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+
   const blockLatexPattern = /\$\$(.*?)\$\$/gs;
   const inlineLatexPattern = /\$([^$]+?)\$/g;
   const parts: Array<{
@@ -46,7 +53,7 @@ const renderLatexContent = (text: string, isUser: boolean) => {
   }> = [];
   let match: RegExpExecArray | null;
 
-  while ((match = blockLatexPattern.exec(text)) !== null) {
+  while ((match = blockLatexPattern.exec(processedText)) !== null) {
     matches.push({
       index: match.index,
       length: match[0].length,
@@ -57,7 +64,7 @@ const renderLatexContent = (text: string, isUser: boolean) => {
 
   blockLatexPattern.lastIndex = 0;
 
-  while ((match = inlineLatexPattern.exec(text)) !== null) {
+  while ((match = inlineLatexPattern.exec(processedText)) !== null) {
     const isInsideBlock = matches.some(
       (blockMatch) =>
         match!.index >= blockMatch.index &&
@@ -78,7 +85,7 @@ const renderLatexContent = (text: string, isUser: boolean) => {
 
   matches.forEach((latexMatch) => {
     if (latexMatch.index > lastIndex) {
-      const textContent = text.slice(lastIndex, latexMatch.index);
+      const textContent = processedText.slice(lastIndex, latexMatch.index);
       if (textContent.trim()) {
         parts.push({
           type: "text",
@@ -98,8 +105,8 @@ const renderLatexContent = (text: string, isUser: boolean) => {
     lastIndex = latexMatch.index + latexMatch.length;
   });
 
-  if (lastIndex < text.length) {
-    const remainingText = text.slice(lastIndex);
+  if (lastIndex < processedText.length) {
+    const remainingText = processedText.slice(lastIndex);
     if (remainingText.trim()) {
       parts.push({
         type: "text",
