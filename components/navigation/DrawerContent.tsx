@@ -36,6 +36,12 @@ export function DrawerContent(props: any) {
       onPress: () => navigateToScreen("/debug"),
       description: "Informações técnicas",
     },
+    {
+      label: "Materiais",
+      icon: "book",
+      onPress: () => navigateToScreen("/materiais"),
+      description: "Explore materiais de estudo",
+    },
   ];
 
   return (
@@ -54,25 +60,21 @@ export function DrawerContent(props: any) {
         </View>
       </View>
 
-      <View className="flex-1 bg-white pt-8 px-6">
+      <View className="flex-1 bg-white">
         <DrawerContentScrollView
           {...props}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          contentContainerStyle={{
+            marginTop: 0,
+            paddingTop: 0,
+          }}
           showsVerticalScrollIndicator={false}
         >
-          <View className="space-y-3">
+          <View className="space-y-3 py-4 ">
             {menuItems.map((item, index) => (
               <TouchableOpacity
                 key={index}
-                className="bg-gray-50/80 rounded-2xl border border-gray-100/50 shadow-sm active:scale-95"
+                className="bg-gray-50/80 rounded-2xl border-2 border-gray-200 active:scale-95 mb-4"
                 onPress={item.onPress}
-                style={{
-                  shadowColor: "#6366f1",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 8,
-                  elevation: 2,
-                }}
               >
                 <View className="flex-row items-center py-5 px-5">
                   <View className="w-12 h-12 bg-violet-100 rounded-xl items-center justify-center mr-4">

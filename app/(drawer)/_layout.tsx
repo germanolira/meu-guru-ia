@@ -39,6 +39,14 @@ export default function DrawerLayout() {
           headerShown: true,
         }}
       />
+      <Drawer.Screen
+        name="materiais"
+        options={{
+          drawerLabel: "Materiais",
+          title: "Materiais",
+          headerShown: false,
+        }}
+      />
     </Drawer>
   );
 }
