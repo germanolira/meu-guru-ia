@@ -1,10 +1,7 @@
 import { generateChatTitle } from '../lib/storage';
 import { useSendMessage } from './useChatAPI';
 
-const USE_OPENAI = process.env.EXPO_PUBLIC_USE_OPENAI === 'true';
-const OPENROUTER_MODEL = 'openai/gpt-4o-mini';
 const OPENAI_MODEL = 'gpt-4o-mini';
-const defaultModel = USE_OPENAI ? OPENAI_MODEL : OPENROUTER_MODEL;
 
 interface TitleAndCategory {
   title: string;
@@ -30,7 +27,7 @@ export function useGenerateTitle() {
 
       const response = await sendMessageMutation.mutateAsync({
         messages: [{ id: 'temp', text: titlePrompt, isUser: true, timestamp: new Date(), role: 'user' }],
-        model: defaultModel,
+        model: OPENAI_MODEL,
         streaming: false,
       });
 

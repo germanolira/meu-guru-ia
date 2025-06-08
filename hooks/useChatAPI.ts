@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system';
 import {
-  ChatMessage,
-  sendChatMessage,
-  sendChatMessageStream,
-} from '../lib/openrouter';
+    ChatMessage,
+    sendChatMessage,
+    sendChatMessageStream,
+} from '../lib/openai';
 import { Annotation, Message } from '../types/chat';
 
 export interface SendMessageParams {

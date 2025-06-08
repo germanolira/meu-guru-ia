@@ -5,10 +5,7 @@ import { Annotation, Message } from "../types/chat";
 import { useSendMessage } from "./useChatAPI";
 import { useChatStorage } from "./useChatStorage";
 
-const USE_OPENAI = process.env.EXPO_PUBLIC_USE_OPENAI === 'true';
-const OPENROUTER_MODEL = 'openai/gpt-4o-mini';
 const OPENAI_MODEL = 'gpt-4o-mini';
-const defaultModel = USE_OPENAI ? OPENAI_MODEL : OPENROUTER_MODEL;
 
 export function useChat() {
   const {
@@ -125,7 +122,7 @@ export function useChat() {
         let accumulatedText = "";
         const response = await sendMessageMutation.mutateAsync({
           messages: contextMessages,
-          model: defaultModel,
+          model: OPENAI_MODEL,
           streaming: true,
           webSearch: isSearchMode,
           onStreamChunk: (chunk: string) => {
